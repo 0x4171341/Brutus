@@ -1,0 +1,88 @@
+#!/bin/bash
+# version 1.0
+space1="a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z"
+if [  $# -le 1 ]
+then 
+ echo "Uso: " $0 SALT PASSWORD_CODED
+ exit
+fi
+
+pt="pass.test"
+initdate=$(date +%s)
+
+mkdir "$pt"
+rm $pt/*
+cd "$pt"
+echo "init" > "0.log"
+
+function maxmem {
+	while [ `free | grep Mem | awk '{print $4}'` -lt 50000 ]
+	do
+		sleep 1
+	done
+}
+
+startfrom="aabrA" # Primeras 5 letras a iniciar
+doit=0
+
+function findhash {
+	anterior=""
+	startfind=$(date +%s)
+	echo "pass file - $3 - $startfind" && echo "pass file - $3" >> "0.log"
+	for variable in $(openssl passwd -crypt -in "pass.$3.d" -table -salt "$1")
+	do
+	 if [ "$variable" = $2 ]
+	 then
+		finishdate=$(date +%s)
+		echo -e "\e[31m ----------------------------------- \e[0m"
+		echo -e "\e[92mPass: \e[102m\e[30m\e[1m $anterior \e[0m"
+		echo -e "\e[90m$initdate\e[0m - \e[90m$finishdate\e[0m" && echo "$initdate - $finishdate" >> "0.log"
+		echo -e "\e[31m ----------------------------------- \e[0m"
+		pkill "bruteforce.sh"
+	 fi
+	 anterior=$variable
+	done
+	echo "" > "pass.$3.d"
+	endfind=$(date +%s)
+	echo "finn file - $3 - $endfind"
+}
+
+for i in $space1  
+do
+ for j in $space1
+ do
+	for k in $space1
+	do
+	 for l in $space1
+	 do
+		for m in $space1  
+		do
+		 np="$i$j$k$l$m"
+		 if [ "$np" = $startfrom ]
+		 then
+		 	doit=1
+		 fi
+		 if [ $doit = 1 ]
+		 then
+		  for n in $space1
+		  do
+			 for o in $space1
+			 do
+			 for p in $space1
+			  do
+			 	 echo "$i$j$k$l$m$n$o$p" >> "pass.$np.d"
+			 	 echo "$p$o$n$m$l$k$j$i" >> "pass.$np.d"
+			  done
+			 done
+		  done
+     	maxmem; findhash $1 $2 $np &
+     else
+      echo $np
+     fi
+		done
+		wait
+	 done
+	done
+ done
+done
+
